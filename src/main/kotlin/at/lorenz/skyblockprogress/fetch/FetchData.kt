@@ -115,6 +115,21 @@ class FetchData(private val apiKey: String, players: MutableMap<String, String>)
                     }
                 }
             }
+
+            if (member.has("dungeons")) {
+                val dungeonTypes = member["dungeons"].asJsonObject["dungeon_types"].asJsonObject
+                for (entry in dungeonTypes.entrySet()) {
+                    val key = entry.key
+
+                    if (key.equals("tier_completions")) {
+                        dungeonTypes.remove(key)
+                    }
+                    if (key.equals("experience")) {
+                        dungeonTypes.remove(key)
+                    }
+                }
+            }
+
             member.remove("collection")
             member.remove("pets")
             member.remove("slayer_bosses")
@@ -130,7 +145,6 @@ class FetchData(private val apiKey: String, players: MutableMap<String, String>)
     private fun cleanupData(profile: JsonObject, uuid: String) {
         profile.remove("selected")
         profile.remove("last_save")
-        profile.remove("banking")
         val members = profile["members"].asJsonObject
         for (memberUuid in members.keySet()) {
             val member = members[memberUuid].asJsonObject
@@ -175,7 +189,6 @@ class FetchData(private val apiKey: String, players: MutableMap<String, String>)
             member.remove("favorite_arrow")
 
             member.remove("last_death")
-            member.remove("coin_purse")
             member.remove("last_save")
             member.remove("soulflow")
             member.remove("slayer_quest")
@@ -213,7 +226,6 @@ class FetchData(private val apiKey: String, players: MutableMap<String, String>)
                 dungeons.remove("selected_dungeon_class")
                 dungeons.remove("daily_runs")
                 dungeons.remove("treasures")
-
                 if (dungeons.has("dungeon_types")) {
                     val dungeonTypes = dungeons.get("dungeon_types").asJsonObject
                     for (typeName in dungeonTypes.keySet()) {

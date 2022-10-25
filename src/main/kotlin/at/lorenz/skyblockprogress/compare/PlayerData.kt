@@ -7,21 +7,17 @@ import java.io.File
 class PlayerData {
 
     var fetchTime = 0L
-    var deathCount = 0L
-    var statsDeaths = 0L
-    var kills = 0L
     val statsKillsReason = mutableMapOf<String, Long>()
     val statsDeathsReason = mutableMapOf<String, Long>()
     val skillExperience = mutableMapOf<String, Long>()
-    var totalPetExpGained = 0L
 
-    val bestiarityKills = mutableMapOf<String, Long>()
-    val bestiarityDeaths = mutableMapOf<String, Long>()
+    val bestiaryKills = mutableMapOf<String, Long>()
+    val bestiaryDeaths = mutableMapOf<String, Long>()
     val collectionCount = mutableMapOf<String, Long>()
-    val pexExperience = mutableMapOf<String, Long>()
-
+    val petExperience = mutableMapOf<String, Long>()
     val mythologyData = mutableMapOf<String, Long>()
-    var mythologyKills = 0L
+    var coins = mutableMapOf<String, Long>()
+    var dungeonFloor = mutableMapOf<String, Long>()
 
     val slayers = mutableMapOf<String, SlayerData>()
     val crimsonIsleReputation = mutableMapOf<String, Long>()
@@ -49,22 +45,36 @@ class PlayerData {
                     val member = members[uuid].asJsonObject
 
                     if (member.has("death_count")) {
-                        data.deathCount = member["death_count"].asLong
+                        data.statsDeathsReason["Total Deaths (/deathcount)"] = member["death_count"].asLong
                     }
+
+                    var totalCoins = 0L
+                    if (member.has("coin_purse")) {
+                        val purse = member["coin_purse"].asLong
+                        totalCoins += purse
+                        data.coins["purse"] = purse
+                    }
+
+                    if (profile.has("banking")) {
+                        val bank = profile["banking"].asJsonObject["balance"].asLong
+                        data.coins["bank"] = bank
+                        totalCoins += bank
+                    }
+                    data.coins["Total Coins"] = totalCoins
 
                     if (member.has("stats")) {
                         val stats = member["stats"].asJsonObject
                         if (stats.has("deaths")) {
-                            data.statsDeaths = stats["deaths"].asLong
+                            data.statsDeathsReason["Total Deaths"] = stats["deaths"].asLong
                         }
                         if (stats.has("kills")) {
-                            data.kills = stats["kills"].asLong
+                            data.statsKillsReason["Total Kills"] = stats["kills"].asLong
                         }
                         if (stats.has("total_pet_exp_gained")) {
-                            data.totalPetExpGained = stats["total_pet_exp_gained"].asLong
+                            data.petExperience["Total Pet XP"] = stats["total_pet_exp_gained"].asLong
                         }
                         if (stats.has("mythos_kills")) {
-                            data.mythologyKills = stats["mythos_kills"].asLong
+                            data.mythologyData["Total Kills"] = stats["mythos_kills"].asLong
                         }
                         for (key in stats.keySet()) {
                             if (key.startsWith("kills_")) {
@@ -97,12 +107,30 @@ class PlayerData {
                             if (key.startsWith("kills_")) {
                                 val label = key.substring(6)
                                 val kills = bestiary[key].asLong
-                                data.bestiarityKills[label] = kills
+                                data.bestiaryKills[label] = kills
                             }
                             if (key.startsWith("deaths_")) {
                                 val label = key.substring(7)
                                 val deaths = bestiary[key].asLong
-                                data.bestiarityDeaths[label] = deaths
+                                data.bestiaryDeaths[label] = deaths
+                            }
+                        }
+                    }
+                    if (member.has("dungeons")) {
+                        val dungeonTypes = member["dungeons"].asJsonObject["dungeon_types"].asJsonObject
+                        for (dungeonTypeEntry in dungeonTypes.entrySet()) {
+                            val dungeonType = dungeonTypeEntry.value.asJsonObject
+                            for (entry in dungeonType.entrySet()) {
+                                val key = entry.key
+                                val value = entry.value
+                                if (key.equals("tier_completions")) {
+                                    for (completions in value.asJsonObject.entrySet()) {
+                                        data.dungeonFloor[completions.key] = data.dungeonFloor.getOrDefault(completions.key, 0) + completions.value.asLong
+                                    }
+                                }
+                                if (key.equals("experience")) {
+                                    data.skillExperience["catacombs"] = value.asLong
+                                }
                             }
                         }
                     }
@@ -120,7 +148,7 @@ class PlayerData {
                             val pet = entry.asJsonObject
                             val type = pet["type"].asString.lowercase()
                             val exp = pet["exp"].asLong
-                            data.pexExperience[type] = exp
+                            data.petExperience[type] = exp
                         }
                     }
 
